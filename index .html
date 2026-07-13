@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Garden Letters</title>
+<title>The Secret Garden</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=Shadows+Into+Light&family=Homemade+Apple&family=Work+Sans:wght@400;500;600&display=swap');
 
@@ -576,7 +576,7 @@ body.dark .toast{ color: #17181B; }
 
 <div id="appScreen">
 <header>
-  <div class="logo"><span class="bud">✿</span> GardenLetters</div>
+  <div class="logo"><span class="bud">✿</span> The Secret Garden</div>
   <input class="search-box" id="searchBox" placeholder="Search letters…">
   <button class="toggle-btn" id="prefsBtn" title="Preferences">⚙</button>
   <button class="toggle-btn" id="themeToggle" title="Toggle theme">☾</button>
@@ -680,6 +680,35 @@ body.dark .toast{ color: #17181B; }
 </div>
 
 <script>
+// Claude's artifact preview provides window.storage automatically.
+// Outside that environment (e.g. hosted on GitHub Pages), it doesn't exist —
+// so we fall back to the browser's own localStorage with the same interface,
+// making this file work standalone too.
+if(!window.storage){
+  const LS_PREFIX = 'secretgarden:';
+  window.storage = {
+    async get(key){
+      const v = localStorage.getItem(LS_PREFIX + key);
+      return v === null ? null : { key, value: v, shared: false };
+    },
+    async set(key, value){
+      localStorage.setItem(LS_PREFIX + key, value);
+      return { key, value, shared: false };
+    },
+    async delete(key){
+      const existed = localStorage.getItem(LS_PREFIX + key) !== null;
+      localStorage.removeItem(LS_PREFIX + key);
+      return { key, deleted: existed, shared: false };
+    },
+    async list(prefix){
+      const keys = Object.keys(localStorage)
+        .filter(k => k.startsWith(LS_PREFIX + (prefix || '')))
+        .map(k => k.slice(LS_PREFIX.length));
+      return { keys, prefix, shared: false };
+    }
+  };
+}
+
 const STORAGE_KEY = 'garden-letters:v3:entries';
 const PREFS_KEY = 'garden-letters:prefs';
 const AUTH_KEY = 'garden-letters:auth';
@@ -786,7 +815,7 @@ el('authSubmit').addEventListener('click', async () => {
     if(pass !== pass2){ authFail('Passwords don\u2019t match.'); return; }
     authRecord = { name, password: pass };
     try{ await window.storage.set(AUTH_KEY, JSON.stringify(authRecord), false); }
-    catch(e){ authFail('Could not save. Try again.'); return; }
+    catch(e){ authFail('Error: ' + e.message); return; }
     unlockApp();
   }else{
     if(!authRecord || name !== authRecord.name || pass !== authRecord.password){
